@@ -63,7 +63,7 @@ export function getDefaultRecommendationImage(name, index = 1) {
 export function toAbsoluteImageUrl(url) {
   if (!url) return null;
   if (url.startsWith("http")) return url;
-  const base = api.defaults.baseURL || "http://localhost:8080";
+  const base = api.defaults.baseURL || "https://fsadproject-backendd-production.up.railway.app";
   return `${base}${url}`;
 }
 
