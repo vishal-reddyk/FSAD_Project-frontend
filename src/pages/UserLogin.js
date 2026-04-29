@@ -11,6 +11,25 @@ function UserLogin() {
   const [captchaOk, setCaptchaOk] = useState(false);
   const navigate = useNavigate();
 
+  const promptPasswordSetup = ({ email, provider }) => {
+    const shouldSetupPassword = window.confirm(
+      `This is your first ${provider} login.\n\nDo you want to create a password now?`
+    );
+
+    if (shouldSetupPassword) {
+      navigate("/setup-password", {
+        state: {
+          email,
+          provider,
+        },
+      });
+      return;
+    }
+
+    localStorage.setItem("user", email);
+    navigate("/dashboard");
+  };
+
   const handleSocialLogin = async (provider) => {
     const email = prompt(`Enter your ${provider} email for OTP login:`);
     if (!email) {
@@ -33,12 +52,7 @@ function UserLogin() {
       alert(verifyRes.data.message || verifyRes.data);
 
       if (verifyRes.data.newUser) {
-        navigate("/setup-password", {
-          state: {
-            email,
-            provider,
-          },
-        });
+        promptPasswordSetup({ email, provider });
         return;
       }
 

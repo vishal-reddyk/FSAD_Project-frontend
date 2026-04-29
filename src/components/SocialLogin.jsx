@@ -16,6 +16,26 @@ const githubProvider = new GithubAuthProvider();
 export default function SocialLogin() {
   const navigate = useNavigate();
 
+  const promptPasswordSetup = ({ email, name, provider }) => {
+    const shouldSetupPassword = window.confirm(
+      `This is your first ${provider} login.\n\nDo you want to create a password now?`
+    );
+
+    if (shouldSetupPassword) {
+      navigate("/setup-password", {
+        state: {
+          email,
+          name,
+          provider,
+        },
+      });
+      return;
+    }
+
+    localStorage.setItem("user", email);
+    navigate("/dashboard");
+  };
+
   const handleSocialLogin = async (provider, providerName) => {
     try {
       const result = await signInWithPopup(auth, provider);
@@ -38,14 +58,11 @@ export default function SocialLogin() {
         localStorage.removeItem("admin");
 
         if (isNewUser) {
-          // ✅ New user - redirect to setup password page
-          alert(`Welcome! Please set up a password for your ${providerValue} account.`);
-          navigate("/setup-password", {
-            state: {
-              email,
-              name,
-              provider: providerValue,
-            },
+          alert(`Welcome! You can create a password for your ${providerValue} account now.`);
+          promptPasswordSetup({
+            email,
+            name,
+            provider: providerValue,
           });
         } else {
           // ✅ Existing user - login directly

@@ -9,7 +9,7 @@ function SetupPassword() {
   const location = useLocation();
   const email = location.state?.email;
   const name = location.state?.name;
-  const provider = location.state?.provider;
+  const provider = location.state?.provider || "social";
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -49,16 +49,16 @@ function SetupPassword() {
       });
 
       if (response.data.message === "Password set successfully") {
-        alert("✅ Password set successfully!");
+        alert("Password set successfully!");
         localStorage.removeItem("admin");
         localStorage.setItem("user", email);
         navigate("/dashboard");
       } else {
-        alert("❌ " + response.data.message);
+        alert(response.data.message || "Error setting password");
       }
     } catch (err) {
       console.error(err);
-      alert("Error: " + getApiErrorMessage(err));
+      alert(getApiErrorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -6,7 +6,12 @@ export default function getApiErrorMessage(err) {
   }
 
   if (data && typeof data === "object") {
-    if (typeof data.message === "string" && data.message.trim()) return data.message;
+    if (typeof data.message === "string" && data.message.trim()) {
+      if (typeof data.error === "string" && data.error.trim()) {
+        return `${data.message}: ${data.error}`;
+      }
+      return data.message;
+    }
     if (typeof data.error === "string" && data.error.trim()) return data.error;
     try {
       return JSON.stringify(data);
@@ -21,4 +26,3 @@ export default function getApiErrorMessage(err) {
 
   return "Error connecting backend";
 }
-

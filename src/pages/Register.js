@@ -2,6 +2,25 @@ import React, { useState } from "react";
 import api from "../api";
 import "../styles/style.css";
 import { useNavigate } from "react-router-dom";
+import getApiErrorMessage from "../utils/getApiErrorMessage";
+
+const getApiMessage = (data, fallback) => {
+  if (typeof data === "string" && data.trim()) {
+    return data;
+  }
+
+  if (data && typeof data === "object") {
+    if (typeof data.message === "string" && data.message.trim()) return data.message;
+    if (typeof data.error === "string" && data.error.trim()) return data.error;
+    try {
+      return JSON.stringify(data);
+    } catch {
+      return fallback;
+    }
+  }
+
+  return fallback;
+};
 
 function Register() {
   const [form, setForm] = useState({
@@ -12,6 +31,25 @@ function Register() {
   const [otpSent, setOtpSent] = useState(false);
   const navigate = useNavigate();
 
+  const promptPasswordSetup = ({ email, provider }) => {
+    const shouldSetupPassword = window.confirm(
+      `Your ${provider} account was verified.\n\nDo you want to create a password now?`
+    );
+
+    if (shouldSetupPassword) {
+      navigate("/setup-password", {
+        state: {
+          email,
+          provider,
+        },
+      });
+      return;
+    }
+
+    localStorage.setItem("user", email);
+    navigate("/dashboard");
+  };
+
   const handleSocialLogin = async (provider) => {
     const email = prompt(`Enter your ${provider} email for OTP signup:`);
     if (!email) {
@@ -20,8 +58,9 @@ function Register() {
 
     try {
       const sendRes = await api.post("/api/auth/social/send-otp", { provider, email });
-      alert(sendRes.data);
-      if (!sendRes.data.includes("OTP Sent")) {
+      const sendMessage = getApiMessage(sendRes.data, "OTP request completed");
+      alert(sendMessage);
+      if (!sendMessage.includes("OTP Sent")) {
         return;
       }
 
@@ -31,13 +70,19 @@ function Register() {
       }
 
       const verifyRes = await api.post("/api/auth/social/verify-otp", { provider, email, otp });
-      alert(verifyRes.data);
-      if (verifyRes.data.startsWith("Account created") || verifyRes.data.startsWith("Logged in")) {
-        localStorage.setItem("user", email);
+      const message = getApiMessage(verifyRes.data, "OTP verification completed");
+      alert(message);
+
+      if (verifyRes.data?.newUser) {
+        promptPasswordSetup({ email, provider });
+        return;
+      }
+
+      if (typeof message === "string" && (message.startsWith("Account created") || message.startsWith("Logged in"))) {
         navigate("/dashboard");
       }
     } catch (err) {
-      alert(err.response?.data || "Error connecting backend");
+      alert(getApiErrorMessage(err));
     }
   };
 
@@ -48,12 +93,13 @@ function Register() {
     }
     try {
       const res = await api.post("/api/auth/send-otp", { email: form.email });
-      alert(res.data);
-      if (res.data === "OTP Sent") {
+      const message = getApiMessage(res.data, "OTP request completed");
+      alert(message);
+      if (message === "OTP Sent") {
         setOtpSent(true);
       }
     } catch (err) {
-      alert(err.response?.data || "Error sending OTP");
+      alert(getApiErrorMessage(err));
     }
   };
 
@@ -64,12 +110,13 @@ function Register() {
     }
     try {
       const res = await api.post("/api/auth/verify-otp", form);
-      alert(res.data);
-      if (res.data === "Registered Successfully") {
+      const message = getApiMessage(res.data, "Registration completed");
+      alert(message);
+      if (message === "Registered Successfully") {
         navigate("/login");
       }
     } catch (err) {
-      alert(err.response?.data || "Error registering user");
+      alert(getApiErrorMessage(err));
     }
   };
 
